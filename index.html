@@ -3,419 +3,24 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>P2P Chat — Gun vs Yjs</title>
+  <title>P2P Chat</title>
+  <link rel="icon" type="image/svg+xml" href="/favicon.svg">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Space+Mono:ital,wght@0,400;0,700;1,400&family=Syne:wght@400;600;800&display=swap" rel="stylesheet">
-  <style>
-    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-
-    :root {
-      --bg: #0a0a0f;
-      --surface: #12121a;
-      --surface2: #1a1a26;
-      --border: #2a2a3a;
-      --text: #e8e8f0;
-      --muted: #6b6b8a;
-      --gun-color: #ff4d6d;
-      --gun-dim: #7a1a2a;
-      --yjs-color: #4dffb4;
-      --yjs-dim: #1a7a4a;
-      --accent: #7c6af7;
-    }
-
-    html, body {
-      height: 100%;
-      background: var(--bg);
-      color: var(--text);
-      font-family: 'Space Mono', monospace;
-      overflow: hidden;
-    }
-
-    /* ── NAVBAR ── */
-    #navbar {
-      display: flex;
-      align-items: center;
-      gap: 0;
-      height: 52px;
-      background: var(--surface);
-      border-bottom: 1px solid var(--border);
-      padding: 0 20px;
-      position: relative;
-      z-index: 10;
-    }
-
-    #navbar .brand {
-      font-family: 'Syne', sans-serif;
-      font-weight: 800;
-      font-size: 14px;
-      letter-spacing: 0.08em;
-      text-transform: uppercase;
-      color: var(--muted);
-      margin-right: auto;
-    }
-
-    #navbar .brand span { color: var(--text); }
-
-    .tab-btn {
-      position: relative;
-      height: 52px;
-      padding: 0 28px;
-      border: none;
-      background: transparent;
-      color: var(--muted);
-      font-family: 'Syne', sans-serif;
-      font-weight: 600;
-      font-size: 13px;
-      letter-spacing: 0.1em;
-      text-transform: uppercase;
-      cursor: pointer;
-      transition: color 0.2s;
-      display: flex;
-      align-items: center;
-      gap: 8px;
-    }
-
-    .tab-btn::after {
-      content: '';
-      position: absolute;
-      bottom: 0;
-      left: 0;
-      right: 0;
-      height: 2px;
-      background: transparent;
-      transition: background 0.2s;
-    }
-
-    .tab-btn .dot {
-      width: 7px;
-      height: 7px;
-      border-radius: 50%;
-      background: currentColor;
-      opacity: 0.4;
-      transition: opacity 0.2s;
-    }
-
-    .tab-btn[data-tab="gun"] { color: var(--gun-dim); }
-    .tab-btn[data-tab="gun"].active { color: var(--gun-color); }
-    .tab-btn[data-tab="gun"].active::after { background: var(--gun-color); }
-    .tab-btn[data-tab="gun"].active .dot { opacity: 1; }
-
-    .tab-btn[data-tab="yjs"] { color: var(--yjs-dim); }
-    .tab-btn[data-tab="yjs"].active { color: var(--yjs-color); }
-    .tab-btn[data-tab="yjs"].active::after { background: var(--yjs-color); }
-    .tab-btn[data-tab="yjs"].active .dot { opacity: 1; }
-
-    .tab-btn .badge {
-      font-size: 9px;
-      padding: 2px 6px;
-      border-radius: 3px;
-      font-family: 'Space Mono', monospace;
-      font-weight: 400;
-    }
-    .tab-btn[data-tab="gun"] .badge { background: var(--gun-dim); color: var(--gun-color); }
-    .tab-btn[data-tab="yjs"] .badge { background: var(--yjs-dim); color: var(--yjs-color); }
-
-    /* ── PANELS ── */
-    #panels {
-      height: calc(100vh - 52px);
-      position: relative;
-    }
-
-    .panel {
-      position: absolute;
-      inset: 0;
-      display: none;
-      flex-direction: column;
-    }
-
-    .panel.active { display: flex; }
-
-    /* ── SHARED CHAT LAYOUT ── */
-    .chat-header {
-      padding: 16px 24px;
-      border-bottom: 1px solid var(--border);
-      display: flex;
-      align-items: center;
-      gap: 12px;
-      background: var(--surface);
-    }
-
-    .chat-header h2 {
-      font-family: 'Syne', sans-serif;
-      font-weight: 800;
-      font-size: 16px;
-      letter-spacing: 0.04em;
-    }
-
-    .chat-header .room-badge {
-      font-size: 11px;
-      padding: 3px 10px;
-      border-radius: 20px;
-      border: 1px solid var(--border);
-      color: var(--muted);
-    }
-
-    .chat-header .peer-count {
-      margin-left: auto;
-      font-size: 11px;
-      color: var(--muted);
-      display: flex;
-      align-items: center;
-      gap: 6px;
-    }
-
-    .peer-count .pulse {
-      width: 6px;
-      height: 6px;
-      border-radius: 50%;
-      animation: pulse 2s infinite;
-    }
-
-    @keyframes pulse {
-      0%, 100% { opacity: 1; transform: scale(1); }
-      50% { opacity: 0.4; transform: scale(0.8); }
-    }
-
-    .room-input-row {
-      display: flex;
-      gap: 8px;
-      padding: 12px 24px;
-      background: var(--surface2);
-      border-bottom: 1px solid var(--border);
-      align-items: center;
-    }
-
-    .room-input-row label {
-      font-size: 10px;
-      text-transform: uppercase;
-      letter-spacing: 0.1em;
-      color: var(--muted);
-      white-space: nowrap;
-    }
-
-    .room-input-row input {
-      flex: 1;
-      background: var(--bg);
-      border: 1px solid var(--border);
-      color: var(--text);
-      font-family: 'Space Mono', monospace;
-      font-size: 12px;
-      padding: 7px 12px;
-      border-radius: 4px;
-      outline: none;
-      transition: border-color 0.2s;
-    }
-
-    .room-input-row input:focus { border-color: var(--accent); }
-
-    .join-btn {
-      padding: 7px 16px;
-      border: none;
-      border-radius: 4px;
-      font-family: 'Syne', sans-serif;
-      font-weight: 600;
-      font-size: 11px;
-      letter-spacing: 0.08em;
-      text-transform: uppercase;
-      cursor: pointer;
-      transition: opacity 0.2s;
-    }
-    .join-btn:hover { opacity: 0.85; }
-
-    #gun-panel .join-btn { background: var(--gun-color); color: #fff; }
-    #yjs-panel .join-btn { background: var(--yjs-color); color: #000; }
-
-    /* ── MESSAGES ── */
-    .messages {
-      flex: 1;
-      overflow-y: auto;
-      padding: 20px 24px;
-      display: flex;
-      flex-direction: column;
-      gap: 2px;
-      scroll-behavior: smooth;
-    }
-
-    .messages::-webkit-scrollbar { width: 4px; }
-    .messages::-webkit-scrollbar-track { background: transparent; }
-    .messages::-webkit-scrollbar-thumb { background: var(--border); border-radius: 2px; }
-
-    .msg {
-      display: flex;
-      gap: 10px;
-      padding: 6px 10px;
-      border-radius: 6px;
-      animation: fadeIn 0.15s ease;
-      max-width: 780px;
-    }
-
-    @keyframes fadeIn {
-      from { opacity: 0; transform: translateY(4px); }
-      to   { opacity: 1; transform: translateY(0); }
-    }
-
-    .msg:hover { background: var(--surface2); }
-
-    .msg .meta {
-      display: flex;
-      align-items: baseline;
-      gap: 8px;
-      margin-bottom: 2px;
-    }
-
-    .msg .nick {
-      font-family: 'Syne', sans-serif;
-      font-weight: 600;
-      font-size: 12px;
-    }
-
-    .msg .time {
-      font-size: 10px;
-      color: var(--muted);
-    }
-
-    .msg .text {
-      font-size: 13px;
-      line-height: 1.6;
-      color: var(--text);
-      word-break: break-word;
-    }
-
-    .msg.system {
-      justify-content: center;
-      opacity: 0.4;
-    }
-
-    .msg.system .text {
-      font-size: 10px;
-      text-transform: uppercase;
-      letter-spacing: 0.1em;
-      color: var(--muted);
-    }
-
-    /* ── INPUT BAR ── */
-    .input-bar {
-      padding: 16px 24px;
-      background: var(--surface);
-      border-top: 1px solid var(--border);
-      display: flex;
-      gap: 10px;
-      align-items: flex-end;
-    }
-
-    .input-bar .nick-field {
-      width: 110px;
-      background: var(--bg);
-      border: 1px solid var(--border);
-      color: var(--muted);
-      font-family: 'Space Mono', monospace;
-      font-size: 12px;
-      padding: 10px 12px;
-      border-radius: 4px;
-      outline: none;
-      transition: border-color 0.2s, color 0.2s;
-      flex-shrink: 0;
-    }
-
-    .input-bar .nick-field:focus { border-color: var(--accent); color: var(--text); }
-
-    .input-bar textarea {
-      flex: 1;
-      background: var(--bg);
-      border: 1px solid var(--border);
-      color: var(--text);
-      font-family: 'Space Mono', monospace;
-      font-size: 13px;
-      padding: 10px 14px;
-      border-radius: 4px;
-      outline: none;
-      resize: none;
-      height: 42px;
-      max-height: 120px;
-      line-height: 1.5;
-      transition: border-color 0.2s;
-    }
-
-    .input-bar textarea:focus { border-color: var(--accent); }
-
-    .send-btn {
-      width: 42px;
-      height: 42px;
-      border: none;
-      border-radius: 4px;
-      font-size: 16px;
-      cursor: pointer;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      flex-shrink: 0;
-      transition: opacity 0.2s, transform 0.1s;
-    }
-
-    .send-btn:hover { opacity: 0.85; }
-    .send-btn:active { transform: scale(0.94); }
-
-    #gun-panel .send-btn { background: var(--gun-color); color: #fff; }
-    #yjs-panel .send-btn { background: var(--yjs-color); color: #000; }
-
-    /* ── STATUS BAR ── */
-    .status-bar {
-      padding: 5px 24px;
-      background: var(--bg);
-      border-top: 1px solid var(--border);
-      font-size: 10px;
-      color: var(--muted);
-      display: flex;
-      gap: 16px;
-    }
-
-    .status-bar span { display: flex; align-items: center; gap: 5px; }
-
-    /* ── GUN colors ── */
-    #gun-panel .chat-header h2 { color: var(--gun-color); }
-    #gun-panel .pulse { background: var(--gun-color); }
-    #gun-panel .msg .nick { color: var(--gun-color); }
-
-    /* ── YJS colors ── */
-    #yjs-panel .chat-header h2 { color: var(--yjs-color); }
-    #yjs-panel .pulse { background: var(--yjs-color); }
-    #yjs-panel .msg .nick { color: var(--yjs-color); }
-
-    /* ── TYPING INDICATOR (Yjs only) ── */
-    .typing-bar {
-      padding: 4px 24px;
-      font-size: 10px;
-      color: var(--muted);
-      min-height: 20px;
-      font-style: italic;
-    }
-
-    /* ── INFO PANEL ── */
-    .info-pill {
-      font-size: 10px;
-      padding: 2px 8px;
-      border-radius: 3px;
-      letter-spacing: 0.06em;
-    }
-
-    #gun-panel .info-pill { background: var(--gun-dim); color: var(--gun-color); }
-    #yjs-panel .info-pill { background: var(--yjs-dim); color: var(--yjs-color); }
-
-    .tech-note {
-      padding: 8px 24px;
-      background: var(--surface2);
-      font-size: 10px;
-      color: var(--muted);
-      border-bottom: 1px solid var(--border);
-      letter-spacing: 0.02em;
-    }
-  </style>
+  <link rel="stylesheet" href="/src/styles.css">
 </head>
-<body>
+<body data-active="gun">
 
 <nav id="navbar">
-  <div class="brand"><span>P2P</span> CHAT — GUN vs YJS</div>
+  <div class="brand"><span>P2P CHAT</span></div>
+
+  <div class="room-join">
+    <label>Room</label>
+    <input type="text" id="room-input" value="lobby" placeholder="room name" />
+    <button class="join-btn" id="join-btn">Join</button>
+  </div>
+
   <button class="tab-btn active" data-tab="gun">
     <span class="dot"></span>
     Gun.js
@@ -430,24 +35,13 @@
 
 <div id="panels">
 
-  <!-- ── GUN PANEL ── -->
+  <!-- GUN PANEL -->
   <div class="panel active" id="gun-panel">
-    <div class="chat-header">
-      <h2>Gun.js</h2>
-      <span class="room-badge" id="gun-room-label">#lobby</span>
-      <span class="info-pill">graph db · gossip protocol</span>
-      <div class="peer-count">
-        <span class="pulse"></span>
-        <span id="gun-peer-status">connecting…</span>
-      </div>
+    <div class="chat-header" id="gun-chat-header">
+      <!-- recent room badges injected by JS -->
     </div>
     <div class="tech-note">
-      📡 Gun stores messages as a graph. Peers sync via WebSocket relay + WebRTC. Data persists in each peer's localStorage.
-    </div>
-    <div class="room-input-row">
-      <label>Room</label>
-      <input type="text" id="gun-room-input" value="lobby" placeholder="room name" />
-      <button class="join-btn" id="gun-join-btn">Join</button>
+      🔫 Gun stores messages as a graph. Peers sync via WebSocket relay + WebRTC. Data persists in each peer's localStorage.
     </div>
     <div class="messages" id="gun-messages"></div>
     <div class="input-bar">
@@ -456,29 +50,19 @@
       <button class="send-btn" id="gun-send-btn">↑</button>
     </div>
     <div class="status-bar">
-      <span>⚙ <span id="gun-storage-note">localStorage · graph nodes</span></span>
-      <span>🔁 <span id="gun-sync-note">eventual consistency · HAM CRDT</span></span>
+      <span>🔗 <span id="gun-peer-status">connecting…</span></span>
+      <span>⚙ localStorage · graph nodes · gossip protocol</span>
+      <span>🔁 eventual consistency · HAM CRDT</span>
     </div>
   </div>
 
-  <!-- ── YJS PANEL ── -->
+  <!-- YJS PANEL -->
   <div class="panel" id="yjs-panel">
-    <div class="chat-header">
-      <h2>Yjs + WebRTC</h2>
-      <span class="room-badge" id="yjs-room-label">#lobby</span>
-      <span class="info-pill">YATA CRDT · binary protocol</span>
-      <div class="peer-count">
-        <span class="pulse"></span>
-        <span id="yjs-peer-status">connecting…</span>
-      </div>
+    <div class="chat-header" id="yjs-chat-header">
+      <!-- recent room badges injected by JS -->
     </div>
     <div class="tech-note">
       ⚡ Yjs syncs a shared Y.Array via WebRTC. Binary-encoded CRDT diffs. Signaling server only for peer discovery — holds zero data.
-    </div>
-    <div class="room-input-row">
-      <label>Room</label>
-      <input type="text" id="yjs-room-input" value="lobby" placeholder="room name" />
-      <button class="join-btn" id="yjs-join-btn">Join</button>
     </div>
     <div class="messages" id="yjs-messages"></div>
     <div class="typing-bar" id="yjs-typing"></div>
@@ -488,8 +72,8 @@
       <button class="send-btn" id="yjs-send-btn">↑</button>
     </div>
     <div class="status-bar">
-      <span>⚙ <span id="yjs-storage-note">IndexedDB · binary Y.Doc</span></span>
-      <span>🔁 <span id="yjs-sync-note">YATA CRDT · sub-ms diffs</span></span>
+      <span>🔗 <span id="yjs-peer-status">connecting…</span></span>
+      <span>⚙ IndexedDB · binary Y.Doc · YATA CRDT</span>
       <span>👥 <span id="yjs-awareness-note">awareness: 0 peers</span></span>
     </div>
   </div>
